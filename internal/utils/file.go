@@ -44,6 +44,11 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 			continue
 		}
 
+		if entry.Type()&os.ModeSymlink != 0 {
+			result.Skipped++
+			continue
+		}
+
 		fileName := entry.Name()
 		ext := strings.ToLower(filepath.Ext(fileName))
 
@@ -64,6 +69,18 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 
 		oldPath := filepath.Join(targetDir, fileName)
 		newPath := filepath.Join(destFolder, fileName)
+
+		// Collision handling
+		baseName := strings.TrimSuffix(fileName, ext)
+		counter := 1
+		for {
+			if _, err := os.Stat(newPath); os.IsNotExist(err) {
+				break
+			}
+			newFileName := fmt.Sprintf("%s (%d)%s", baseName, counter, ext)
+			newPath = filepath.Join(destFolder, newFileName)
+			counter++
+		}
 
 		if err := os.Rename(oldPath, newPath); err != nil {
 			return nil, fmt.Errorf("failed to move '%s': %w", fileName, err)

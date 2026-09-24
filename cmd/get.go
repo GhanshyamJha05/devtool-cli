@@ -10,6 +10,7 @@ import (
 )
 
 var saveFile string
+var forceSave bool
 
 var getCmd = &cobra.Command{
 	Use:   "get <url>",
@@ -51,6 +52,12 @@ Examples:
 
 		// Save to file or print to stdout
 		if saveFile != "" {
+			if !forceSave {
+				if _, err := os.Stat(saveFile); err == nil {
+					utils.PrintError(fmt.Sprintf("File %s already exists. Use --force to overwrite.", saveFile))
+					return fmt.Errorf("file exists")
+				}
+			}
 			if err := os.WriteFile(saveFile, []byte(resp.Body), 0644); err != nil {
 				utils.PrintError(fmt.Sprintf("Failed to save: %s", err.Error()))
 				return err
@@ -68,4 +75,5 @@ Examples:
 func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.Flags().StringVarP(&saveFile, "save", "s", "", "save response to a file (e.g., --save output.json)")
+	getCmd.Flags().BoolVarP(&forceSave, "force", "f", false, "force overwrite if file already exists")
 }

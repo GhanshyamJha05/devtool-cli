@@ -10,6 +10,7 @@ import (
 )
 
 var saveFormatted string
+var forceSaveFormatted bool
 
 var formatCmd = &cobra.Command{
 	Use:   "format <file.json>",
@@ -38,6 +39,12 @@ Examples:
 
 		// Save to file or print to stdout
 		if saveFormatted != "" {
+			if !forceSaveFormatted {
+				if _, err := os.Stat(saveFormatted); err == nil {
+					utils.PrintError(fmt.Sprintf("File %s already exists. Use --force to overwrite.", saveFormatted))
+					return fmt.Errorf("file exists")
+				}
+			}
 			if Verbose {
 				utils.PrintDebug(fmt.Sprintf("Writing output to: %s", saveFormatted))
 			}
@@ -60,4 +67,5 @@ Examples:
 func init() {
 	rootCmd.AddCommand(formatCmd)
 	formatCmd.Flags().StringVarP(&saveFormatted, "save", "s", "", "save formatted output to a file")
+	formatCmd.Flags().BoolVarP(&forceSaveFormatted, "force", "f", false, "force overwrite if file already exists")
 }
