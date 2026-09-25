@@ -34,7 +34,7 @@ func TestOrganizeFolder(t *testing.T) {
 	}
 
 	// Run OrganizeFolder
-	result, err := OrganizeFolder(tempDir)
+	result, err := OrganizeFolder(tempDir, false)
 	if err != nil {
 		t.Fatalf("OrganizeFolder failed: %v", err)
 	}

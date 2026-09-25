@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,16 +9,22 @@ import (
 	"sync"
 )
 
+type MoveOp struct {
+	OldPath string `json:"old_path"`
+	NewPath string `json:"new_path"`
+}
+
 // CleanResult holds a summary of the clean operation for display.
 type CleanResult struct {
 	TotalFiles int
 	Skipped    int
 	Moved      map[string][]string // category → list of filenames
+	Moves      []MoveOp
 }
 
 // OrganizeFolder reads a directory and moves files into categorized subfolders.
 // Returns a structured result for the caller to display.
-func OrganizeFolder(targetDir string) (*CleanResult, error) {
+func OrganizeFolder(targetDir string, dryRun bool) (*CleanResult, error) {
 	// Step 1: Validate that the path exists and is a directory
 	info, err := os.Stat(targetDir)
 	if os.IsNotExist(err) {
@@ -67,13 +74,15 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 				category := getCategoryForExtension(j.ext)
 				destFolder := filepath.Join(targetDir, category)
 
-				if err := os.MkdirAll(destFolder, 0755); err != nil {
-					mu.Lock()
-					if moveErr == nil {
-						moveErr = fmt.Errorf("failed to create folder '%s': %w", destFolder, err)
+				if !dryRun {
+					if err := os.MkdirAll(destFolder, 0755); err != nil {
+						mu.Lock()
+						if moveErr == nil {
+							moveErr = fmt.Errorf("failed to create folder '%s': %w", destFolder, err)
+						}
+						mu.Unlock()
+						continue
 					}
-					mu.Unlock()
-					continue
 				}
 
 				oldPath := filepath.Join(targetDir, j.fileName)
@@ -90,17 +99,20 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 					counter++
 				}
 
-				if err := os.Rename(oldPath, newPath); err != nil {
-					mu.Lock()
-					if moveErr == nil {
-						moveErr = fmt.Errorf("failed to move '%s': %w", j.fileName, err)
+				if !dryRun {
+					if err := os.Rename(oldPath, newPath); err != nil {
+						mu.Lock()
+						if moveErr == nil {
+							moveErr = fmt.Errorf("failed to move '%s': %w", j.fileName, err)
+						}
+						mu.Unlock()
+						continue
 					}
-					mu.Unlock()
-					continue
 				}
 
 				mu.Lock()
 				result.Moved[category] = append(result.Moved[category], j.fileName)
+				result.Moves = append(result.Moves, MoveOp{OldPath: oldPath, NewPath: newPath})
 				result.TotalFiles++
 				mu.Unlock()
 			}
@@ -157,4 +169,26 @@ func getCategoryForExtension(ext string) string {
 	default:
 		return "Others"
 	}
+}
+
+// SaveUndoFile writes the move operations to a JSON file
+func SaveUndoFile(path string, moves []MoveOp) error {
+	data, err := json.MarshalIndent(moves, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// LoadUndoFile reads the move operations from a JSON file
+func LoadUndoFile(path string) ([]MoveOp, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var moves []MoveOp
+	if err := json.Unmarshal(data, &moves); err != nil {
+		return nil, err
+	}
+	return moves, nil
 }

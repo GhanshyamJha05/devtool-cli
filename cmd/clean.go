@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
 
 	"github.com/spf13/cobra"
 )
+
+var dryRun bool
 
 var cleanCmd = &cobra.Command{
 	Use:   "clean <folder>",
@@ -25,9 +28,13 @@ Examples:
 			utils.PrintDebug(fmt.Sprintf("Target directory: %s", folderPath))
 		}
 
-		utils.PrintInfo(fmt.Sprintf("Scanning folder: %s...", folderPath))
+		if dryRun {
+			utils.PrintInfo(fmt.Sprintf("[DRY-RUN] Scanning folder: %s...", folderPath))
+		} else {
+			utils.PrintInfo(fmt.Sprintf("Scanning folder: %s...", folderPath))
+		}
 
-		result, err := utils.OrganizeFolder(folderPath)
+		result, err := utils.OrganizeFolder(folderPath, dryRun)
 		if err != nil {
 			utils.PrintError(err.Error())
 			return err
@@ -54,12 +61,26 @@ Examples:
 			utils.PrintWarning(fmt.Sprintf("Skipped %d file(s) with no extension", result.Skipped))
 		}
 
+		if !dryRun && len(result.Moves) > 0 {
+			undoPath := filepath.Join(folderPath, ".devtool-undo.json")
+			if err := utils.SaveUndoFile(undoPath, result.Moves); err != nil {
+				utils.PrintWarning(fmt.Sprintf("Failed to save undo file: %v", err))
+			} else {
+				utils.PrintSuccess(fmt.Sprintf("Undo mapping saved to %s", undoPath))
+			}
+		}
+
 		fmt.Println()
-		utils.PrintSuccess(fmt.Sprintf("Done! Organized %d file(s) into %d categories", result.TotalFiles, len(result.Moved)))
+		if dryRun {
+			utils.PrintSuccess(fmt.Sprintf("[DRY-RUN] Would organize %d file(s) into %d categories", result.TotalFiles, len(result.Moved)))
+		} else {
+			utils.PrintSuccess(fmt.Sprintf("Done! Organized %d file(s) into %d categories", result.TotalFiles, len(result.Moved)))
+		}
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(cleanCmd)
+	cleanCmd.Flags().BoolVar(&dryRun, "dry-run", false, "simulate the organization without moving files")
 }
