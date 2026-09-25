@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // CleanResult holds a summary of the clean operation for display.
@@ -39,6 +40,73 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 		Moved: make(map[string][]string),
 	}
 
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var moveErr error
+
+	type job struct {
+		fileName string
+		ext      string
+	}
+
+	jobs := make(chan job, len(entries))
+
+	numWorkers := 5
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				mu.Lock()
+				hasErr := moveErr != nil
+				mu.Unlock()
+				if hasErr {
+					continue
+				}
+
+				category := getCategoryForExtension(j.ext)
+				destFolder := filepath.Join(targetDir, category)
+
+				if err := os.MkdirAll(destFolder, 0755); err != nil {
+					mu.Lock()
+					if moveErr == nil {
+						moveErr = fmt.Errorf("failed to create folder '%s': %w", destFolder, err)
+					}
+					mu.Unlock()
+					continue
+				}
+
+				oldPath := filepath.Join(targetDir, j.fileName)
+				newPath := filepath.Join(destFolder, j.fileName)
+
+				baseName := strings.TrimSuffix(j.fileName, j.ext)
+				counter := 1
+				for {
+					if _, err := os.Stat(newPath); os.IsNotExist(err) {
+						break
+					}
+					newFileName := fmt.Sprintf("%s (%d)%s", baseName, counter, j.ext)
+					newPath = filepath.Join(destFolder, newFileName)
+					counter++
+				}
+
+				if err := os.Rename(oldPath, newPath); err != nil {
+					mu.Lock()
+					if moveErr == nil {
+						moveErr = fmt.Errorf("failed to move '%s': %w", j.fileName, err)
+					}
+					mu.Unlock()
+					continue
+				}
+
+				mu.Lock()
+				result.Moved[category] = append(result.Moved[category], j.fileName)
+				result.TotalFiles++
+				mu.Unlock()
+			}
+		}()
+	}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -52,41 +120,18 @@ func OrganizeFolder(targetDir string) (*CleanResult, error) {
 		fileName := entry.Name()
 		ext := strings.ToLower(filepath.Ext(fileName))
 
-		// Skip files without extensions
 		if ext == "" {
 			result.Skipped++
 			continue
 		}
 
-		result.TotalFiles++
-		category := getCategoryForExtension(ext)
-		destFolder := filepath.Join(targetDir, category)
+		jobs <- job{fileName: fileName, ext: ext}
+	}
+	close(jobs)
+	wg.Wait()
 
-		// Create category folder if needed
-		if err := os.MkdirAll(destFolder, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create folder '%s': %w", destFolder, err)
-		}
-
-		oldPath := filepath.Join(targetDir, fileName)
-		newPath := filepath.Join(destFolder, fileName)
-
-		// Collision handling
-		baseName := strings.TrimSuffix(fileName, ext)
-		counter := 1
-		for {
-			if _, err := os.Stat(newPath); os.IsNotExist(err) {
-				break
-			}
-			newFileName := fmt.Sprintf("%s (%d)%s", baseName, counter, ext)
-			newPath = filepath.Join(destFolder, newFileName)
-			counter++
-		}
-
-		if err := os.Rename(oldPath, newPath); err != nil {
-			return nil, fmt.Errorf("failed to move '%s': %w", fileName, err)
-		}
-
-		result.Moved[category] = append(result.Moved[category], fileName)
+	if moveErr != nil {
+		return result, moveErr
 	}
 
 	return result, nil

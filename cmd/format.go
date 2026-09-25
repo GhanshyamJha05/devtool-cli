@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
@@ -31,11 +32,10 @@ Examples:
 
 		utils.PrintInfo(fmt.Sprintf("Formatting %s...", filePath))
 
-		formatted, err := utils.FormatJSON(filePath)
-		if err != nil {
-			utils.PrintError(err.Error())
-			return err
-		}
+		utils.PrintInfo(fmt.Sprintf("Formatting %s...", filePath))
+
+		var out io.Writer
+		var outFile *os.File
 
 		// Save to file or print to stdout
 		if saveFormatted != "" {
@@ -48,18 +48,33 @@ Examples:
 			if Verbose {
 				utils.PrintDebug(fmt.Sprintf("Writing output to: %s", saveFormatted))
 			}
-			if err := os.WriteFile(saveFormatted, []byte(formatted+"\n"), 0644); err != nil {
-				utils.PrintError(fmt.Sprintf("Failed to save: %s", err.Error()))
+			
+			var err error
+			outFile, err = os.Create(saveFormatted)
+			if err != nil {
+				utils.PrintError(fmt.Sprintf("Failed to create file: %s", err.Error()))
 				return err
 			}
-			utils.PrintSuccess(fmt.Sprintf("Formatted JSON saved to %s", saveFormatted))
-			return nil
+			defer outFile.Close()
+			out = outFile
+		} else {
+			out = os.Stdout
+			fmt.Println()
 		}
 
-		fmt.Println()
-		fmt.Println(formatted)
-		fmt.Println()
-		utils.PrintSuccess("JSON is valid and formatted")
+		err := utils.FormatJSON(filePath, out)
+		if err != nil {
+			utils.PrintError(err.Error())
+			return err
+		}
+
+		if saveFormatted != "" {
+			utils.PrintSuccess(fmt.Sprintf("Formatted JSON saved to %s", saveFormatted))
+		} else {
+			fmt.Println()
+			utils.PrintSuccess("JSON is valid and formatted")
+		}
+		
 		return nil
 	},
 }

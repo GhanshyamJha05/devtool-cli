@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,28 +28,30 @@ func TestFormatJSON(t *testing.T) {
 	os.WriteFile(emptyJSONFile, []byte(` `), 0644)
 
 	// Test Valid JSON
-	formatted, err := FormatJSON(validJSONFile)
+	var buf bytes.Buffer
+	err = FormatJSON(validJSONFile, &buf)
 	if err != nil {
 		t.Errorf("FormatJSON failed for valid JSON: %v", err)
 	}
+	formatted := buf.String()
 	if !strings.Contains(formatted, `"hello": "world"`) {
 		t.Errorf("Formatted JSON does not contain expected output: %s", formatted)
 	}
 
 	// Test Invalid JSON
-	_, err = FormatJSON(invalidJSONFile)
+	err = FormatJSON(invalidJSONFile, &buf)
 	if err == nil {
 		t.Errorf("Expected error for invalid JSON, got nil")
 	}
 
 	// Test Empty JSON
-	_, err = FormatJSON(emptyJSONFile)
+	err = FormatJSON(emptyJSONFile, &buf)
 	if err == nil {
 		t.Errorf("Expected error for empty JSON, got nil")
 	}
 
 	// Test Non-existent file
-	_, err = FormatJSON(filepath.Join(tempDir, "nonexistent.json"))
+	err = FormatJSON(filepath.Join(tempDir, "nonexistent.json"), &buf)
 	if err == nil {
 		t.Errorf("Expected error for non-existent file, got nil")
 	}
@@ -56,7 +59,7 @@ func TestFormatJSON(t *testing.T) {
 	// Test Invalid extension
 	txtFile := filepath.Join(tempDir, "file.txt")
 	os.WriteFile(txtFile, []byte(`{}`), 0644)
-	_, err = FormatJSON(txtFile)
+	err = FormatJSON(txtFile, &buf)
 	if err == nil {
 		t.Errorf("Expected error for non-JSON file extension, got nil")
 	}

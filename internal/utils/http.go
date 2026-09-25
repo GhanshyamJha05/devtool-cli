@@ -13,7 +13,7 @@ import (
 type HTTPResponse struct {
 	StatusCode int
 	Status     string
-	Body       string
+	BodyReader io.ReadCloser
 	Duration   time.Duration
 	Headers    http.Header
 }
@@ -44,20 +44,12 @@ func FetchData(rawURL string) (*HTTPResponse, error) {
 		}
 		return nil, fmt.Errorf("network error: %w", err)
 	}
-	defer resp.Body.Close()
-
 	duration := time.Since(start)
-
-	// Step 4: Read the body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
 
 	return &HTTPResponse{
 		StatusCode: resp.StatusCode,
 		Status:     resp.Status,
-		Body:       string(body),
+		BodyReader: resp.Body,
 		Duration:   duration,
 		Headers:    resp.Header,
 	}, nil

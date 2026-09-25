@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
@@ -37,6 +38,7 @@ Examples:
 			utils.PrintError(err.Error())
 			return err
 		}
+		defer resp.BodyReader.Close()
 
 		// Display response metadata
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
@@ -58,16 +60,29 @@ Examples:
 					return fmt.Errorf("file exists")
 				}
 			}
-			if err := os.WriteFile(saveFile, []byte(resp.Body), 0644); err != nil {
+			
+			file, err := os.Create(saveFile)
+			if err != nil {
+				utils.PrintError(fmt.Sprintf("Failed to create file: %s", err.Error()))
+				return err
+			}
+			defer file.Close()
+			
+			written, err := io.Copy(file, resp.BodyReader)
+			if err != nil {
 				utils.PrintError(fmt.Sprintf("Failed to save: %s", err.Error()))
 				return err
 			}
-			utils.PrintSuccess(fmt.Sprintf("Response saved to %s (%d bytes)", saveFile, len(resp.Body)))
+			utils.PrintSuccess(fmt.Sprintf("Response saved to %s (%d bytes)", saveFile, written))
 			return nil
 		}
 
 		fmt.Println()
-		fmt.Println(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.BodyReader)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(bodyBytes))
 		return nil
 	},
 }

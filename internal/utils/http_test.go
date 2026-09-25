@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,8 +25,10 @@ func TestFetchData(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
 	}
-	if resp.Body != `{"message": "success"}` {
-		t.Errorf("Unexpected response body: %s", resp.Body)
+	defer resp.BodyReader.Close()
+	bodyBytes, _ := io.ReadAll(resp.BodyReader)
+	if string(bodyBytes) != `{"message": "success"}` {
+		t.Errorf("Unexpected response body: %s", string(bodyBytes))
 	}
 
 	// Test invalid URL format
