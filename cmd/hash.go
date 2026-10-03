@@ -29,9 +29,9 @@ Example:
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
-		
+
 		var data []byte
-		
+
 		if isString {
 			data = []byte(target)
 		} else {
@@ -41,7 +41,7 @@ Example:
 				return err
 			}
 			defer file.Close()
-			
+
 			d, err := io.ReadAll(file)
 			if err != nil {
 				utils.PrintError(fmt.Sprintf("Failed to read file: %v", err))
@@ -49,7 +49,7 @@ Example:
 			}
 			data = d
 		}
-		
+
 		if useMD5 {
 			hash := md5.Sum(data)
 			fmt.Printf("%x\n", hash)
@@ -58,7 +58,7 @@ Example:
 			hash := sha256.Sum256(data)
 			fmt.Printf("%x\n", hash)
 		}
-		
+
 		return nil
 	},
 }

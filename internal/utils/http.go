@@ -14,8 +14,9 @@ type HTTPResponse struct {
 	StatusCode int
 	Status     string
 	BodyReader io.ReadCloser
-	Duration   time.Duration
-	Headers    http.Header
+	Duration      time.Duration
+	Headers       http.Header
+	ContentLength int64
 }
 
 // FetchData performs an HTTP GET with timeout, URL validation, and structured response.
@@ -47,11 +48,12 @@ func FetchData(rawURL string) (*HTTPResponse, error) {
 	duration := time.Since(start)
 
 	return &HTTPResponse{
-		StatusCode: resp.StatusCode,
-		Status:     resp.Status,
-		BodyReader: resp.Body,
-		Duration:   duration,
-		Headers:    resp.Header,
+		StatusCode:    resp.StatusCode,
+		Status:        resp.Status,
+		BodyReader:    resp.Body,
+		Duration:      duration,
+		Headers:       resp.Header,
+		ContentLength: resp.ContentLength,
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
+	"github.com/pterm/pterm"
 
 	"github.com/spf13/cobra"
 )
@@ -28,17 +29,19 @@ Examples:
 			utils.PrintDebug(fmt.Sprintf("Target directory: %s", folderPath))
 		}
 
+		var spinner *pterm.SpinnerPrinter
 		if dryRun {
-			utils.PrintInfo(fmt.Sprintf("[DRY-RUN] Scanning folder: %s...", folderPath))
+			spinner, _ = pterm.DefaultSpinner.Start(fmt.Sprintf("[DRY-RUN] Scanning folder: %s...", folderPath))
 		} else {
-			utils.PrintInfo(fmt.Sprintf("Scanning folder: %s...", folderPath))
+			spinner, _ = pterm.DefaultSpinner.Start(fmt.Sprintf("Scanning folder: %s...", folderPath))
 		}
 
 		result, err := utils.OrganizeFolder(folderPath, dryRun)
 		if err != nil {
-			utils.PrintError(err.Error())
+			spinner.Fail(err.Error())
 			return err
 		}
+		spinner.Success("Scan complete")
 
 		// Handle edge case: nothing to organize
 		if result.TotalFiles == 0 {

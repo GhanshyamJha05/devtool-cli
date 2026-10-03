@@ -22,7 +22,7 @@ Example:
 			utils.PrintError(fmt.Sprintf("Failed to generate UUID: %v", err))
 			return err
 		}
-		
+
 		fmt.Println(uuid)
 		return nil
 	},
@@ -34,12 +34,12 @@ func generateUUID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Set the version to 4
 	b[6] = (b[6] & 0x0f) | 0x40
 	// Set the variant to RFC4122
 	b[8] = (b[8] & 0x3f) | 0x80
-	
+
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
 }
 

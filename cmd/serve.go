@@ -22,14 +22,14 @@ Example:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		addr := ":" + port
 		utils.PrintSuccess(fmt.Sprintf("Serving HTTP on 0.0.0.0 port %s (http://localhost:%s/)", port, port))
-		
+
 		http.Handle("/", http.FileServer(http.Dir(".")))
-		
+
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			utils.PrintError(fmt.Sprintf("Server failed: %v", err))
 			return err
 		}
-		
+
 		return nil
 	},
 }

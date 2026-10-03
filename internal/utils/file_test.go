@@ -59,7 +59,7 @@ func TestOrganizeFolder(t *testing.T) {
 		if count := len(result.Moved[category]); count != expectedCount {
 			t.Errorf("Expected %d files in %s, got %d", expectedCount, category, count)
 		}
-		
+
 		// Verify folder exists
 		categoryPath := filepath.Join(tempDir, category)
 		info, err := os.Stat(categoryPath)

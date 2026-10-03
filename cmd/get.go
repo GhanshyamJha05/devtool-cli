@@ -7,11 +7,25 @@ import (
 
 	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 var saveFile string
 var forceSave bool
+
+type progressReader struct {
+	io.Reader
+	bar *pterm.ProgressbarPrinter
+}
+
+func (pr *progressReader) Read(p []byte) (n int, err error) {
+	n, err = pr.Reader.Read(p)
+	if pr.bar != nil && n > 0 {
+		pr.bar.Add(n)
+	}
+	return
+}
 
 var getCmd = &cobra.Command{
 	Use:   "get <url>",
@@ -60,15 +74,26 @@ Examples:
 					return fmt.Errorf("file exists")
 				}
 			}
-			
+
 			file, err := os.Create(saveFile)
 			if err != nil {
 				utils.PrintError(fmt.Sprintf("Failed to create file: %s", err.Error()))
 				return err
 			}
 			defer file.Close()
-			
-			written, err := io.Copy(file, resp.BodyReader)
+
+			var reader io.Reader = resp.BodyReader
+			var bar *pterm.ProgressbarPrinter
+			if resp.ContentLength > 0 {
+				bar, _ = pterm.DefaultProgressbar.WithTotal(int(resp.ContentLength)).WithTitle("Downloading").Start()
+				reader = &progressReader{Reader: resp.BodyReader, bar: bar}
+			}
+
+			written, err := io.Copy(file, reader)
+			if bar != nil {
+				bar.Stop()
+			}
+
 			if err != nil {
 				utils.PrintError(fmt.Sprintf("Failed to save: %s", err.Error()))
 				return err

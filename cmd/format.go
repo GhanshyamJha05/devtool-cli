@@ -112,7 +112,7 @@ Examples:
 			if Verbose {
 				utils.PrintDebug(fmt.Sprintf("Writing output to: %s", saveFormatted))
 			}
-			
+
 			var err error
 			outFile, err = os.Create(saveFormatted)
 			if err != nil {
@@ -145,7 +145,7 @@ Examples:
 			fmt.Println()
 			utils.PrintSuccess("JSON is valid and formatted")
 		}
-		
+
 		return nil
 	},
 }

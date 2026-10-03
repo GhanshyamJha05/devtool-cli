@@ -49,6 +49,25 @@ func FormatJSON(filePath string, out io.Writer) error {
 	return nil
 }
 
+// FormatJSONBytes validates and pretty-prints JSON bytes directly to the writer.
+func FormatJSONBytes(data []byte, out io.Writer) error {
+	var parsedJSON interface{}
+	if len(data) == 0 {
+		return fmt.Errorf("JSON data is empty")
+	}
+	if err := json.Unmarshal(data, &parsedJSON); err != nil {
+		return fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	encoder := json.NewEncoder(out)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(parsedJSON); err != nil {
+		return fmt.Errorf("failed to format JSON: %w", err)
+	}
+
+	return nil
+}
+
 // validateJSONFile checks that the file exists and has a .json extension.
 func validateJSONFile(filePath string) error {
 	// Check if file exists

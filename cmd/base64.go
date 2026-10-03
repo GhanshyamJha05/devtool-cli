@@ -22,7 +22,7 @@ Example:
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
-		
+
 		if decodeMode {
 			decoded, err := base64.StdEncoding.DecodeString(target)
 			if err != nil {
@@ -34,7 +34,7 @@ Example:
 			encoded := base64.StdEncoding.EncodeToString([]byte(target))
 			fmt.Println(encoded)
 		}
-		
+
 		return nil
 	},
 }
