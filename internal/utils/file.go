@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/spf13/viper"
 )
 
 type MoveOp struct {
@@ -151,6 +153,18 @@ func OrganizeFolder(targetDir string, dryRun bool) (*CleanResult, error) {
 
 // getCategoryForExtension maps file extensions to human-readable folder names.
 func getCategoryForExtension(ext string) string {
+	if viper.IsSet("categories") {
+		// Read custom map of category -> list of extensions
+		categories := viper.GetStringMapStringSlice("categories")
+		for cat, exts := range categories {
+			for _, e := range exts {
+				if strings.ToLower(e) == ext {
+					return cat
+				}
+			}
+		}
+	}
+
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico", ".bmp":
 		return "Images"

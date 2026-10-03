@@ -1,6 +1,8 @@
 # Binaries
 devtool
 devtool.exe
+devtool-cli
+devtool-cli.exe
 
 # Test artifacts
 *.test

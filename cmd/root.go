@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/GhanshyamJha05/devtool-cli/internal/utils"
+
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // Verbose is a global flag accessible by all subcommands for debug logging.
@@ -24,8 +27,26 @@ func Execute() {
 	}
 }
 
+func initConfig() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	viper.AddConfigPath(home)
+	viper.SetConfigType("yaml")
+	viper.SetConfigName(".devtool-cli")
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err == nil {
+		if Verbose {
+			utils.PrintDebug(fmt.Sprintf("Using config file: %s", viper.ConfigFileUsed()))
+		}
+	}
+}
+
 func init() {
-	// PersistentFlags are inherited by ALL child commands.
-	// This is how you create a truly global flag in Cobra.
+	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "enable verbose/debug output")
 }
