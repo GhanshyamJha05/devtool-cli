@@ -126,7 +126,7 @@ Examples:
 			fmt.Println()
 		}
 
-		err := utils.FormatJSON(filePath, out)
+		err = utils.FormatJSON(filePath, out)
 		if err != nil {
 			utils.PrintError(err.Error())
 			return err
