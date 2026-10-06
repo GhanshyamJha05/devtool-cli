@@ -1,155 +1,69 @@
-# Devtool-cli
+# Devtool CLI 🚀
 
-A small Go CLI for everyday developer chores.
+`devtool-cli` is an elite, high-performance, modular command-line interface built in Go. It acts as a multi-tool for developers, automating the most common (and annoying) daily tasks like fetching APIs, formatting JSON, sorting messy folders, decoding JWTs, converting Unix timestamps, and much more.
 
-It can fetch API responses, format JSON files, and organize a messy folder by file type. I built it as a simple terminal tool, with readable output and clear errors.
+It features **interactive UI components** (spinners and progress bars), stream-based processing for massive files, and extreme concurrency for blazing-fast execution.
 
-## Preview
+## 📦 Installation
 
-
-
-![image](https://github.com/user-attachments/assets/7b2c3e42-ac62-418b-b5f8-39e4e0b40d0d)
-
-
-Live site:
-
-```text
-https://ghanshyamjha05.github.io/devtool-cli/
-```
-
-## What it does
-
-| Command | What it does |
-| --- | --- |
-| `get` | Fetches data from an HTTP/HTTPS URL |
-| `format` | Validates and pretty-prints a JSON file |
-| `clean` | Moves files into folders like Images, Documents, Code, Videos, etc. |
-| `version` | Prints the installed version |
-
-## Install
-
-You need Go installed first.
+*(Assuming you have GoReleaser set up, binary downloads will appear in the Releases tab. For now, you can install via `go install`)*
 
 ```bash
 go install github.com/GhanshyamJha05/devtool-cli@latest
 ```
 
-On Windows, Go usually installs the binary here:
+## 🛠️ Features & Commands
 
-```text
-C:\Users\<your-name>\go\bin
+### 1. Network & API Tools
+*   **`devtool get <url>`**: Fetch data from any API and pretty-print the JSON response, status code, and latency.
+    *   `--save <filename>`: Stream massive files directly to disk without crashing memory, complete with a real-time visual progress bar.
+*   **`devtool serve`**: Instantly spin up a local static HTTP server in your current directory.
+    *   `--port <number>`: Specify a custom port (default is 8080).
+
+### 2. File Organization
+*   **`devtool clean <folder>`**: Scan a chaotic directory (like your Downloads folder) and automatically sort files into categorized subfolders (`Images`, `Code`, `Documents`, etc.) concurrently.
+    *   `--dry-run`: Preview what will happen without actually moving any files.
+*   **`devtool undo <folder>`**: Instantly revert a previous `clean` operation. Files are put back exactly where they were using an auto-generated `.devtool-undo.json` mapping.
+
+### 3. Developer Utilities
+*   **`devtool jwt <token>`**: Decode and inspect a JSON Web Token securely on your local machine. It pretty-prints the Header and Payload, and clearly tells you if the token is expired or how much time is left.
+*   **`devtool time <timestamp|now>`**: Convert Unix epoch timestamps (in seconds or milliseconds) to human-readable Local and UTC time, or get the current epoch stamp by passing `now`.
+*   **`devtool format <file.json>`**: Read a minified or ugly JSON file and print a beautifully indented, human-readable version.
+    *   `--in-place` (`-i`): Batch format an entire directory of JSON files instantly.
+*   **`devtool uuid`**: Quickly generate and print a random UUID (Version 4) to your terminal.
+*   **`devtool hash <file>`**: Compute the cryptographic hash of a file (defaults to `SHA-256`).
+    *   `--md5`: Use MD5 instead.
+    *   `--string "text"`: Hash raw text instead of a file.
+*   **`devtool base64 <string>`**: Encode raw text into a Base64 string.
+    *   `--decode` (`-d`): Decode a Base64 string back into readable text.
+
+### 4. Self-Updater
+*   **`devtool update`**: Automatically pings the GitHub repository, checks for the latest release, and safely replaces your current executable with the newest version so you never fall behind.
+
+## ⚙️ Configuration
+
+`devtool-cli` supports a configuration file! By default, it looks for `~/.devtool-cli.yaml`. 
+You can use this to customize the CLI's behavior. For example, you can define custom file categories for the `clean` command:
+
+```yaml
+categories:
+  Music:
+    - .mp3
+    - .wav
+    - .flac
+  Design:
+    - .fig
+    - .psd
 ```
 
-If the command is not recognized, add that folder to your PATH and reopen the terminal.
+## 🐛 Debugging
+Every single command supports a global `--verbose` (`-v`) flag. If something isn't working right, tack on `-v` to get highly detailed, step-by-step debug logs.
 
-The installed command name is:
+## 🤝 Contributing
+Pull requests are welcome! The project uses Cobra for CLI structuring, Viper for configuration, and Pterm for interactive UI components. 
 
-```bash
-devtool-cli
-```
-
-## Usage
-
-Check the available commands:
-
-```bash
-devtool-cli --help
-```
-
-Fetch an API response:
-
-```bash
-devtool-cli get https://jsonplaceholder.typicode.com/posts/1
-```
-
-Save the response to a file:
-
-```bash
-devtool-cli get https://jsonplaceholder.typicode.com/posts/1 --save post.json
-```
-
-Format a JSON file:
-
-```bash
-devtool-cli format ugly.json
-```
-
-Save formatted JSON:
-
-```bash
-devtool-cli format ugly.json --save pretty.json
-```
-
-Clean a folder:
-
-```bash
-devtool-cli clean "C:\Users\you\Downloads"
-```
-
-Use quotes when the folder path has spaces.
-
-Show extra details:
-
-```bash
-devtool-cli clean "C:\Users\you\Downloads" --verbose
-```
-
-## Using it on another system
-
-Keep these things in mind:
-
-- Install Go first.
-- Use the same install command: `go install github.com/GhanshyamJha05/devtool-cli@latest`.
-- Make sure Go's `bin` folder is in PATH.
-- On Windows, the binary will usually be `devtool-cli.exe`.
-- On macOS/Linux, it will usually be `devtool-cli`.
-- Internet is needed for `go install` and for the `get` command.
-- The `clean` command moves files, so test it on a sample folder first.
-- If a path has spaces, wrap it in quotes.
-
-Quick check after installing:
-
-```bash
-devtool-cli version
-devtool-cli --help
-```
-
-## Build from source
-
-```bash
-git clone https://github.com/GhanshyamJha05/devtool-cli.git
-cd devtool-cli
-go build -o devtool-cli .
-```
-
-Then run:
-
-```bash
-./devtool-cli --help
-```
-
-On Windows Command Prompt:
-
-```cmd
-devtool-cli.exe --help
-```
-
-## Project structure
-
-```text
-devtool-cli/
-  cmd/              command setup
-  internal/utils/   core logic
-  docs/             GitHub Pages site
-  testdata/         sample files
-  main.go
-  go.mod
-```
-
-## Notes
-
-This is still a small project. Good next upgrades would be tests, a dry-run option for `clean`, and better release automation.
-
-## License
-
-MIT
+1. Fork the repo.
+2. Create your feature branch (`git checkout -b feature/cool-idea`).
+3. Commit your changes (`git commit -m 'feat: Add some cool idea'`).
+4. Push to the branch (`git push origin feature/cool-idea`).
+5. Open a Pull Request.
